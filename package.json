@@ -1,0 +1,12 @@
+{
+  "name": "sotay-api",
+  "version": "1.0.0",
+  "description": "TSCOVN - HandBook",
+  "main": "src/server.js",
+  "author": "hungit",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
