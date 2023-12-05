@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Updated by trungquandev.com's author on August 17 2023
  * YouTube: https://youtube.com/@trungquandev
@@ -5,33 +6,65 @@
  */
 
 import express from "express";
-import { mapOrder } from "~/utils/sorts.js";
+import { env } from "~/config/environment";
 
-const app = express();
+import { CONNECT_DB, GET_DB } from "~/config/mongodb";
 
-const hostname = "localhost";
-const port = 8017;
+const START_SERVER = () => {
+  const app = express();
+  app.get("/", async (req, res) => {
+    res.end("<h1>Hello World!</h1><hr>");
+  });
 
-app.get("/", (req, res) => {
-  // Test Absolute import mapOrder
-  // eslint-disable-next-line no-console
-  console.log(
-    mapOrder(
-      [
-        { id: "id-1", name: "One" },
-        { id: "id-2", name: "Two" },
-        { id: "id-3", name: "Three" },
-        { id: "id-4", name: "Four" },
-        { id: "id-5", name: "Five" },
-      ],
-      ["id-5", "id-4", "id-2", "id-3", "id-1"],
-      "id"
-    )
-  );
-  res.end("<h1>Hello World!</h1><hr>");
-});
+  app.listen(env.APP_PORT, env.APP_HOST, () => {
+    console.log(
+      `Hello ${env.AUTHOR}, Back-end server is running at at http://${env.APP_HOST}:${env.APP_PORT}/`
+    );
+  });
+  // Do something when app is closing
+  process.stdin.resume(); // so the program will not close instantly
+  function exitHandler(options, exitCode) {
+    if (options.cleanup) console.log("clean");
+    if (exitCode || exitCode === 0) console.log(exitCode);
+    if (options.exit) console.log("Server is shutting down...Bye Bye...");
+    process.exit();
+  }
 
-app.listen(port, hostname, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Hello, I am running server at ${hostname}:${port}/`);
-});
+  // do something when app is closing
+  process.on("exit", exitHandler.bind(null, { cleanup: true }));
+
+  // catches ctrl+c event
+  process.on("SIGINT", function () {
+    exitHandler({ exit: true });
+  });
+  // catches "kill pid" (for example: nodemon restart)
+  process.on("SIGUSR1", exitHandler.bind(null, { exit: true }));
+  process.on("SIGUSR2", exitHandler.bind(null, { exit: true }));
+  // catches uncaught exceptions
+  process.on("uncaughtException", exitHandler.bind(null, { exit: true }));
+
+  // Do something when app is closing
+};
+(async () => {
+  try {
+    console.log("Connecting to MongoDB...");
+    await CONNECT_DB();
+    console.log("Connected");
+    START_SERVER();
+  } catch (error) {
+    console.error(error);
+    process.exit(0);
+  }
+})();
+
+// console.log("Connecting to MongoDB...");
+
+// CONNECT_DB()
+//   .then(() => {
+//     console.log("Connected");
+//   })
+//   .then(() => START_SERVER())
+//   .catch((error) => {
+//     console.error(error);
+//     process.exit(0);
+//   });
