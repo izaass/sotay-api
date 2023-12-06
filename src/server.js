@@ -6,15 +6,22 @@
  */
 
 import express from "express";
+import cors from "cors";
+import { corsOptions } from "~/config/cors";
 import { env } from "~/config/environment";
-
+import { APIs_V1 } from "~/routes/v1";
 import { CONNECT_DB, GET_DB } from "~/config/mongodb";
-
+import { errorHandlingMiddleware } from "~/middlewares/errorHandlingMiddleware";
 const START_SERVER = () => {
   const app = express();
-  app.get("/", async (req, res) => {
-    res.end("<h1>Hello World!</h1><hr>");
-  });
+  //xu ly CORS
+  app.use(cors(corsOptions));
+  //enable req.bodu as json data
+  app.use(express.json());
+  //use APIs v1
+  app.use("/v1", APIs_V1);
+  //middleware xu ly loi tap trung
+  app.use(errorHandlingMiddleware);
 
   app.listen(env.APP_PORT, env.APP_HOST, () => {
     console.log(
