@@ -19,6 +19,7 @@ const createNew = async (req, res, next) => {
     next(error);
   }
 };
+
 const getDetails = async (req, res, next) => {
   try {
     // console.log("req.params:", req.params);
@@ -32,7 +33,31 @@ const getDetails = async (req, res, next) => {
     next(error);
   }
 };
+
+const update = async (req, res, next) => {
+  try {
+    const boardId = req.params.id;
+
+    const updatedboard = await boardService.update(boardId, req.body);
+
+    //co kq thi tra ve client
+    res.status(StatusCodes.OK).json(updatedboard);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const moveCardToDiffCol = async (req, res, next) => {
+  try {
+    const result = await boardService.moveCardToDiffCol(req.body);
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 export const boardController = {
   createNew,
   getDetails,
+  update,
+  moveCardToDiffCol,
 };

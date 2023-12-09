@@ -25,11 +25,15 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   updateAt: Joi.date().timestamp("javascript").default(null),
   _destroy: Joi.boolean().default(false),
 });
+
+const INVALID_UPDATE_FIELDS = ["_id", "createdAt"];
+
 const validateBeforeCreate = async (data) => {
   return await BOARD_COLLECTION_SCHEMA.validateAsync(data, {
     abortEarly: false,
   });
 };
+
 const createNew = async (data) => {
   try {
     const validData = await validateBeforeCreate(data);
@@ -41,6 +45,7 @@ const createNew = async (data) => {
     throw new Error(error);
   }
 };
+
 const findOneById = async (id) => {
   try {
     const result = await GET_DB()
@@ -81,7 +86,71 @@ const getDetails = async (id) => {
         },
       ])
       .toArray();
-    return result[0] || {};
+    return result[0] || null;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+//them 1 gia tri col id vao cuoi mang CardOrderIds
+const pushColOrderIds = async (col) => {
+  try {
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(col.boardId) },
+        { $push: { columnOrderIds: new ObjectId(col._id) } },
+        { returnDocument: "after" }
+      );
+
+    return result;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+//
+const update = async (boardId, updateData) => {
+  try {
+    //loc cac truong khong duoc update
+    Object.keys(updateData).forEach((fieldName) => {
+      if (INVALID_UPDATE_FIELDS.includes(fieldName)) {
+        delete updateData[fieldName];
+      }
+    });
+
+    // doi voi objectid
+    if (updateData.columnOrderIds)
+      updateData.columnOrderIds = updateData.columnOrderIds.map(
+        (_id) => new ObjectId(_id)
+      );
+
+    //cap nhat data
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(boardId) },
+        { $set: updateData },
+        { returnDocument: "after" }
+      );
+
+    return result;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+//* lay mot phan tu trong mang de xoa no di
+const pullColOrderIds = async (col) => {
+  try {
+    const result = await GET_DB()
+      .collection(BOARD_COLLECTION_NAME)
+      .findOneAndUpdate(
+        { _id: new ObjectId(col.boardId) },
+        { $pull: { columnOrderIds: new ObjectId(col._id) } },
+        { returnDocument: "after" }
+      );
+
+    return result;
   } catch (error) {
     throw new Error(error);
   }
@@ -90,9 +159,13 @@ const getDetails = async (id) => {
 export const boardModel = {
   BOARD_COLLECTION_NAME,
   BOARD_COLLECTION_SCHEMA,
+  INVALID_UPDATE_FIELDS,
   createNew,
   findOneById,
   getDetails,
+  pushColOrderIds,
+  pullColOrderIds,
+  update,
 };
 
 //boardId: 656ffd4fc1987e9138a82a73

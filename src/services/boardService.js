@@ -7,6 +7,8 @@ import { boardModel } from "~/models/boardModel";
 import { StatusCodes } from "http-status-codes";
 import { cloneDeep } from "lodash";
 import ApiError from "~/utils/ApiError";
+import { columnModel } from "~/models/columnModel";
+import { cardModel } from "~/models/cardModel";
 const createNew = async (reqBody) => {
   try {
     //xu ly logic du lieu
@@ -47,7 +49,42 @@ const getDetails = async (boardId) => {
     throw error;
   }
 };
+
+const update = async (boardId, reqBody) => {
+  try {
+    const updateData = { ...reqBody, updatedAt: Date.now() };
+    const upadtedBoard = await boardModel.update(boardId, updateData);
+
+    return upadtedBoard;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const moveCardToDiffCol = async (reqBody) => {
+  try {
+    // b1: cap nhat mang CardOrderIds cua col ban dau cua no (xoa card ra khoi mang)
+    await columnModel.update(reqBody.prevColumnId, {
+      cardOrderIds: reqBody.prevCardOrderIds,
+      updatedAt: Date.now(),
+    });
+    // b2: cap nhat mang cardOrderIds của col tiep theo (them _id của card vao mang)
+    await columnModel.update(reqBody.nextColumnId, {
+      cardOrderIds: reqBody.nextCardOrderIds,
+      updatedAt: Date.now(),
+    });
+    // b3: Cap nhat lại truong column id mới của card da xoa
+    await cardModel.update(reqBody.currentCardId, {
+      columnId: reqBody.nextColumnId,
+    });
+    return { updateResult: "Successfully !!" };
+  } catch (error) {
+    throw error;
+  }
+};
 export const boardService = {
   createNew,
   getDetails,
+  update,
+  moveCardToDiffCol,
 };
